@@ -147,6 +147,43 @@ struct ScrollPositionWithScrollPositionType: View {
     }
 }
 
+struct ScrollPositionWithScrollViewReader: View {
+    
+    @State private var data = ApplicationData(cells: CellModel.sampleData)
+    
+    var body: some View {
+        ScrollViewReader { proxy in
+            GroupBox {
+                let ids = data.cells.map(\.id)
+                HStack {
+                    Button("Leading") {
+                        proxy.scrollTo(ids.first!)
+                    }
+                    
+                    Button("Trailing") {
+                        withAnimation {
+                            proxy.scrollTo(ids.last!)
+                        }
+                    }
+                    
+                    Button("Random") {
+                        proxy.scrollTo(ids.randomElement()!, anchor: .leading)
+                    }
+                }
+            }
+            ScrollView(.horizontal) {
+                HStack {
+                    ForEach(data.cells) {
+                        CellHorizontal(cell: $0, withFrame: true)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollIndicators(.hidden)
+        }
+    }
+}
+
 struct DefaultScrollAnchor: View {
     
     @State private var data = ApplicationData(cells: CellModel.sampleData)
@@ -175,6 +212,10 @@ struct DefaultScrollAnchor: View {
 
 #Preview("With type") {
     ScrollPositionWithScrollPositionType()
+}
+
+#Preview("With ScrollViewReader") {
+    ScrollPositionWithScrollViewReader()
 }
 
 #Preview("Default scroll anchor") {
