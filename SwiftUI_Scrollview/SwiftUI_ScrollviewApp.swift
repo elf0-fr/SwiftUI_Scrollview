@@ -11,7 +11,7 @@ import SwiftUI
 struct SwiftUI_ScrollviewApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ScrollDismissesKeyboard()
         }
     }
 }
