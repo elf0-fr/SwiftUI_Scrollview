@@ -11,7 +11,7 @@ struct SafeAreaPadding: View {
     
     @State private var data = ApplicationData(cells: CellModel.sampleData)
     
-    let size: CGFloat = 300
+    let size: CGFloat = 150
     let spacing: CGFloat = 5
     private func safeAreaPadding(totalWidth width: CGFloat) -> CGFloat {
         return (width - (size + spacing)) / 2
@@ -32,6 +32,7 @@ struct SafeAreaPadding: View {
             .scrollTargetBehavior(.viewAligned)
             .safeAreaPadding(.horizontal, safeAreaPadding(totalWidth: proxy.size.width))
         }
+        .frame(width: 300)
     }
 }
 
