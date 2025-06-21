@@ -8,29 +8,18 @@
 import SwiftUI
 
 struct InfiniteScrolling: View {
+
+    var colors = [Color.red, Color.blue, Color.green, Color.yellow]
     
-    @State private var scrollPosition: Int?
-    @State private var itemsArray: [[Color]] = []
+    @Binding var scrollPosition: Int?
     
-    private let colors = [Color.red, Color.blue, Color.green, Color.yellow]
-    private let with: CGFloat = 250
-    private let height: CGFloat = 350
     private let animationDuration: CGFloat = 0.3
     
     var body: some View {
-        let itemsTemp = itemsArray.flatMap { $0 }
-        let widthDiff = UIScreen.main.bounds.width - with
         ScrollView(.horizontal) {
             HStack(spacing: 0) {
-                ForEach(itemsTemp.indices, id: \.self) { index in
-                    let color = itemsTemp[index]
-                    Text("\(color)")
-                        .frame(width: with, height: height)
-                        .background {
-                            RoundedRectangle(cornerRadius: 25)
-                                .fill(color)
-                        }
-                        .padding(.horizontal, widthDiff / 2)
+                ForEach(0...2, id: \.self) { loopIndex in
+                    makeContent(loopIndex)
                 }
             }
             .scrollTargetLayout()
@@ -39,38 +28,99 @@ struct InfiniteScrolling: View {
         .scrollIndicators(.hidden)
         .scrollTargetBehavior(.paging)
         .onAppear {
-            itemsArray = [colors, colors, colors]
-            
             // start at the first item of the second colors array
             scrollPosition = colors.count
         }
         .onChange(of: scrollPosition) {
-            guard let scrollPosition else { return }
+            updateArrayToPerformInfiniteScrollingTowardLeft()
+            updateArrayToPerformInfiniteScrollingTowardRight()
+        }
+    }
+    
+    func getId(loopIndex: Int, index: Int) -> Int {
+        return index + loopIndex * 4
+    }
+    
+    @ViewBuilder
+    func makeContent(_ loopIndex: Int) -> some View {
+        let with: CGFloat = 250
+        let height: CGFloat = 350
+        let widthDiff: CGFloat = UIScreen.main.bounds.width - with
+        
+        ForEach(colors.indices, id: \.self) { index in
+            let color = colors[index]
+            let id = getId(loopIndex: loopIndex, index: index)
             
-            let itemCount = colors.count
-            // last item of the first colors Array
-            if scrollPosition / itemCount == 0 && scrollPosition % itemCount == itemCount - 1 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
-                    // append colors array before the first and remove the current last color array.
-                    // This code allow an infinite scrolling toward left.
-                    itemsArray.removeLast()
-                    itemsArray.insert(colors, at: 0)
-                    self.scrollPosition = scrollPosition + colors.count
+            Text("\(color)\nloop: \(loopIndex)   index: \(index)")
+                .frame(width: with, height: height)
+                .background {
+                    RoundedRectangle(cornerRadius: 25)
+                        .fill(color)
                 }
+                .padding(.horizontal, widthDiff / 2)
+                .id(id)
+        }
+    }
+    
+    private func updateArrayToPerformInfiniteScrollingTowardLeft() {
+        guard let scrollPosition else { return }
+        
+        let itemCount = colors.count
+        
+        // last item of the first colors Array
+        if scrollPosition / itemCount == 0 && scrollPosition % itemCount == itemCount - 1 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
+                // This code allow an infinite scrolling toward left.
+                self.scrollPosition = scrollPosition + colors.count
             }
-            
-            // first item of the last colors Array
-            if scrollPosition / itemCount == 2 && scrollPosition % itemCount == 0 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
-                    itemsArray.removeFirst()
-                    itemsArray.append(colors)
-                    self.scrollPosition = scrollPosition - colors.count
-                }
+        }
+    }
+    
+    private func updateArrayToPerformInfiniteScrollingTowardRight() {
+        guard let scrollPosition else { return }
+        
+        let itemCount = colors.count
+       
+        // first item of the last colors Array
+        if scrollPosition / itemCount == 2 && scrollPosition % itemCount == 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
+                self.scrollPosition = scrollPosition - colors.count
             }
         }
     }
 }
 
+struct InfiniteScrollingWithDotsIndicator: View {
+    
+    let colors = [Color.red, Color.blue, Color.green, Color.yellow]
+    @State private var scrollPosition: Int?
+    
+    var body: some View {
+        InfiniteScrolling(colors: colors, scrollPosition: $scrollPosition)
+            .overlay(alignment: .bottom) {
+                HStack {
+                    ForEach(colors.indices, id: \.self) { index in
+                        Button {
+                            withAnimation {
+                                scrollPosition = index + colors.count
+                            }
+                        } label: {
+                            Circle()
+                                .fill(.thickMaterial.opacity((index == (scrollPosition ?? 0) % colors.count) ? 0.8 : 0.3))
+                                .frame(width: 15)
+                        }
+                    }
+                }
+                .padding(.bottom)
+            }
+    }
+}
+
 #Preview {
-    InfiniteScrolling()
+    @Previewable @State var scrollPosition: Int?
+    InfiniteScrolling(scrollPosition: $scrollPosition)
+}
+
+#Preview {
+    InfiniteScrollingWithDotsIndicator()
 }
